@@ -1,7 +1,9 @@
-cmake_minimum_required(VERSION 3.12)
+cmake_minimum_required(VERSION 3.15)
 project(vpl)
 
 set(CMAKE_CXX_STANDARD 11)
+cmake_policy(SET CMP0091 NEW)
+set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 
 set(SDK_DIR ${CMAKE_SOURCE_DIR})
 set(LIBVPL_DIR ${SDK_DIR}/libvpl)
@@ -58,4 +60,19 @@ target_compile_definitions(vpl PRIVATE
     NOMINMAX
     MFX_DEPRECATED_OFF
     MFX_D3D11_SUPPORT
+)
+
+target_link_libraries(vpl
+    kernel32
+    user32
+    gdi32
+    winspool
+    shell32
+    ole32
+    oleaut32
+    uuid
+    comdlg32
+    advapi32
+    d3d11
+    dxgi
 )

@@ -1,7 +1,9 @@
-cmake_minimum_required(VERSION 3.12)
+cmake_minimum_required(VERSION 3.15)
 project(amf)
 
 set(CMAKE_CXX_STANDARD 11)
+cmake_policy(SET CMP0091 NEW)
+set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 
 set(AMF_DIR ${CMAKE_SOURCE_DIR})
 set(AMF_COMMON_DIR ${AMF_DIR}/amf/public/common)
@@ -24,3 +26,7 @@ include_directories(${AMF_INCLUDE_DIRS})
 
 # Build target
 add_library(amf STATIC ${SOURCES})
+
+target_link_libraries(amf
+    ole32
+)

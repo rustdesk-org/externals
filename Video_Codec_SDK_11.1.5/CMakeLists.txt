@@ -1,7 +1,9 @@
-cmake_minimum_required(VERSION 3.12)
+cmake_minimum_required(VERSION 3.15)
 project(video_codec_sdk)
 
 set(CMAKE_CXX_STANDARD 11)
+cmake_policy(SET CMP0091 NEW)
+set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 
 # Include directories
 set(FFNVCodec_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/../nv-codec-headers_n11.1.5.2/include/ffnvcodec)
