@@ -300,6 +300,7 @@ static inline void nvenc_free_functions(NvencFunctions **functions)
 #ifdef FFNV_DYNLINK_CUDA_H
 static inline int cuda_load_functions(CudaFunctions **functions, void *logctx)
 {
+    (void)logctx;
     GENERIC_LOAD_FUNC_PREAMBLE(CudaFunctions, cuda, CUDA_LIBNAME);
 
     LOAD_SYMBOL(cuInit, tcuInit, "cuInit");
@@ -405,6 +406,7 @@ static inline int cuda_load_functions(CudaFunctions **functions, void *logctx)
 
 static inline int cuvid_load_functions(CuvidFunctions **functions, void *logctx)
 {
+    (void)logctx;
     GENERIC_LOAD_FUNC_PREAMBLE(CuvidFunctions, cuvid, NVCUVID_LIBNAME);
 
     LOAD_SYMBOL_OPT(cuvidGetDecoderCaps, tcuvidGetDecoderCaps, "cuvidGetDecoderCaps");
@@ -443,6 +445,7 @@ static inline int cuvid_load_functions(CuvidFunctions **functions, void *logctx)
 
 static inline int nvenc_load_functions(NvencFunctions **functions, void *logctx)
 {
+    (void)logctx;
     GENERIC_LOAD_FUNC_PREAMBLE(NvencFunctions, nvenc, NVENC_LIBNAME);
 
     LOAD_SYMBOL(NvEncodeAPICreateInstance, tNvEncodeAPICreateInstance, "NvEncodeAPICreateInstance");
