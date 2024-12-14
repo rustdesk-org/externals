@@ -210,6 +210,7 @@ typedef struct CudaFunctions {
     tcuGraphicsUnmapResources *cuGraphicsUnmapResources;
     tcuGraphicsSubResourceGetMappedArray *cuGraphicsSubResourceGetMappedArray;
     tcuGraphicsResourceGetMappedPointer *cuGraphicsResourceGetMappedPointer;
+    tcuGraphicsResourceSetMapFlags_v2 *cuGraphicsResourceSetMapFlags;
 
     tcuImportExternalMemory *cuImportExternalMemory;
     tcuDestroyExternalMemory *cuDestroyExternalMemory;
@@ -306,6 +307,7 @@ static inline void nvenc_free_functions(NvencFunctions **functions)
 #ifdef FFNV_DYNLINK_CUDA_H
 static inline int cuda_load_functions(CudaFunctions **functions, void *logctx)
 {
+    (void)logctx;
     GENERIC_LOAD_FUNC_PREAMBLE(CudaFunctions, cuda, CUDA_LIBNAME);
 
     LOAD_SYMBOL(cuInit, tcuInit, "cuInit");
@@ -377,6 +379,7 @@ static inline int cuda_load_functions(CudaFunctions **functions, void *logctx)
     LOAD_SYMBOL(cuGraphicsUnmapResources, tcuGraphicsUnmapResources, "cuGraphicsUnmapResources");
     LOAD_SYMBOL(cuGraphicsSubResourceGetMappedArray, tcuGraphicsSubResourceGetMappedArray, "cuGraphicsSubResourceGetMappedArray");
     LOAD_SYMBOL(cuGraphicsResourceGetMappedPointer, tcuGraphicsResourceGetMappedPointer, "cuGraphicsResourceGetMappedPointer_v2");
+    LOAD_SYMBOL(cuGraphicsResourceSetMapFlags, tcuGraphicsResourceSetMapFlags_v2, "cuGraphicsResourceSetMapFlags_v2");
 
     LOAD_SYMBOL_OPT(cuDeviceGetUuid, tcuDeviceGetUuid, "cuDeviceGetUuid");
     LOAD_SYMBOL_OPT(cuDeviceGetUuid_v2, tcuDeviceGetUuid_v2, "cuDeviceGetUuid_v2");
@@ -417,6 +420,7 @@ static inline int cuda_load_functions(CudaFunctions **functions, void *logctx)
 
 static inline int cuvid_load_functions(CuvidFunctions **functions, void *logctx)
 {
+    (void)logctx;
     GENERIC_LOAD_FUNC_PREAMBLE(CuvidFunctions, cuvid, NVCUVID_LIBNAME);
 
     LOAD_SYMBOL_OPT(cuvidGetDecoderCaps, tcuvidGetDecoderCaps, "cuvidGetDecoderCaps");
@@ -455,6 +459,7 @@ static inline int cuvid_load_functions(CuvidFunctions **functions, void *logctx)
 
 static inline int nvenc_load_functions(NvencFunctions **functions, void *logctx)
 {
+    (void)logctx;
     GENERIC_LOAD_FUNC_PREAMBLE(NvencFunctions, nvenc, NVENC_LIBNAME);
 
     LOAD_SYMBOL(NvEncodeAPICreateInstance, tNvEncodeAPICreateInstance, "NvEncodeAPICreateInstance");
