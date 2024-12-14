@@ -38,9 +38,10 @@ static inline bool operator!=(const GUID &guid1, const GUID &guid2) {
 }
 #endif
 
-NvEncoder::NvEncoder(NV_ENC_DEVICE_TYPE eDeviceType, void *pDevice, uint32_t nWidth, uint32_t nHeight, NV_ENC_BUFFER_FORMAT eBufferFormat,
+NvEncoder::NvEncoder(NvencFunctions *nvenc_dl, NV_ENC_DEVICE_TYPE eDeviceType, void *pDevice, uint32_t nWidth, uint32_t nHeight, NV_ENC_BUFFER_FORMAT eBufferFormat,
                             uint32_t nExtraOutputDelay, bool bMotionEstimationOnly, bool bOutputInVideoMemory, bool bDX12Encode, bool bUseIVFContainer) :
-    m_pDevice(pDevice), 
+    m_nvenc_dl(nvenc_dl),
+	m_pDevice(pDevice), 
     m_eDeviceType(eDeviceType),
     m_nWidth(nWidth),
     m_nHeight(nHeight),
@@ -76,7 +77,7 @@ void NvEncoder::LoadNvEncApi()
 
     uint32_t version = 0;
     uint32_t currentVersion = (NVENCAPI_MAJOR_VERSION << 4) | NVENCAPI_MINOR_VERSION;
-    NVENC_API_CALL(NvEncodeAPIGetMaxSupportedVersion(&version));
+    NVENC_API_CALL(m_nvenc_dl->NvEncodeAPIGetMaxSupportedVersion(&version));
     if (currentVersion > version)
     {
         NVENC_THROW_ERROR("Current Driver Version does not support this NvEncodeAPI version, please upgrade driver", NV_ENC_ERR_INVALID_VERSION);
@@ -84,7 +85,7 @@ void NvEncoder::LoadNvEncApi()
 
 
     m_nvenc = { NV_ENCODE_API_FUNCTION_LIST_VER };
-    NVENC_API_CALL(NvEncodeAPICreateInstance(&m_nvenc));
+    NVENC_API_CALL(m_nvenc_dl->NvEncodeAPICreateInstance(&m_nvenc));
 }
 
 NvEncoder::~NvEncoder()
@@ -446,7 +447,7 @@ void NvEncoder::MapResources(uint32_t bfrIdx)
     }
 }
 
-void NvEncoder::EncodeFrame(std::vector<std::vector<uint8_t>> &vPacket, NV_ENC_PIC_PARAMS *pPicParams)
+void NvEncoder::EncodeFrame(std::vector<NvPacket> &vPacket, NV_ENC_PIC_PARAMS *pPicParams)
 {
     vPacket.clear();
     if (!IsHWEncoderInitialized())
@@ -488,13 +489,13 @@ void NvEncoder::RunMotionEstimation(std::vector<uint8_t> &mvData)
     if (nvStatus == NV_ENC_SUCCESS)
     {
         m_iToSend++;
-        std::vector<std::vector<uint8_t>> vPacket;
+        std::vector<NvPacket> vPacket;
         GetEncodedPacket(m_vMVDataOutputBuffer, vPacket, true);
         if (vPacket.size() != 1)
         {
             NVENC_THROW_ERROR("GetEncodedPacket() doesn't return one (and only one) MVData", NV_ENC_ERR_GENERIC);
         }
-        mvData = vPacket[0];
+        mvData = vPacket[0].data;
     }
     else
     {
@@ -546,7 +547,7 @@ void NvEncoder::SendEOS()
     NVENC_API_CALL(m_nvenc.nvEncEncodePicture(m_hEncoder, &picParams));
 }
 
-void NvEncoder::EndEncode(std::vector<std::vector<uint8_t>> &vPacket)
+void NvEncoder::EndEncode(std::vector<NvPacket> &vPacket)
 {
     vPacket.clear();
     if (!IsHWEncoderInitialized())
@@ -559,7 +560,7 @@ void NvEncoder::EndEncode(std::vector<std::vector<uint8_t>> &vPacket)
     GetEncodedPacket(m_vBitstreamOutputBuffer, vPacket, false);
 }
 
-void NvEncoder::GetEncodedPacket(std::vector<NV_ENC_OUTPUT_PTR> &vOutputBuffer, std::vector<std::vector<uint8_t>> &vPacket, bool bOutputDelay)
+void NvEncoder::GetEncodedPacket(std::vector<NV_ENC_OUTPUT_PTR> &vOutputBuffer, std::vector<NvPacket> &vPacket, bool bOutputDelay)
 {
     unsigned i = 0;
     int iEnd = bOutputDelay ? m_iToSend - m_nOutputDelay : m_iToSend;
@@ -574,22 +575,22 @@ void NvEncoder::GetEncodedPacket(std::vector<NV_ENC_OUTPUT_PTR> &vOutputBuffer, 
         uint8_t *pData = (uint8_t *)lockBitstreamData.bitstreamBufferPtr;
         if (vPacket.size() < i + 1)
         {
-            vPacket.push_back(std::vector<uint8_t>());
+            vPacket.push_back(NvPacket());
         }
-        vPacket[i].clear();
+        vPacket[i].data.clear();
        
         if ((m_initializeParams.encodeGUID == NV_ENC_CODEC_AV1_GUID) && (m_bUseIVFContainer))
         {
             if (m_bWriteIVFFileHeader)
             {
-                m_IVFUtils.WriteFileHeader(vPacket[i], MAKE_FOURCC('A', 'V', '0', '1'), m_initializeParams.encodeWidth, m_initializeParams.encodeHeight, m_initializeParams.frameRateNum, m_initializeParams.frameRateDen, 0xFFFF);
+                m_IVFUtils.WriteFileHeader(vPacket[i].data, MAKE_FOURCC('A', 'V', '0', '1'), m_initializeParams.encodeWidth, m_initializeParams.encodeHeight, m_initializeParams.frameRateNum, m_initializeParams.frameRateDen, 0xFFFF);
                 m_bWriteIVFFileHeader = false;
             }
 
-            m_IVFUtils.WriteFrameHeader(vPacket[i], lockBitstreamData.bitstreamSizeInBytes, lockBitstreamData.outputTimeStamp);
+            m_IVFUtils.WriteFrameHeader(vPacket[i].data, lockBitstreamData.bitstreamSizeInBytes, lockBitstreamData.outputTimeStamp);
         }
-        vPacket[i].insert(vPacket[i].end(), &pData[0], &pData[lockBitstreamData.bitstreamSizeInBytes]);
-        
+        vPacket[i].data.insert(vPacket[i].data.end(), &pData[0], &pData[lockBitstreamData.bitstreamSizeInBytes]);
+        vPacket[i].pictureType = lockBitstreamData.pictureType;
         i++;
 
         NVENC_API_CALL(m_nvenc.nvEncUnlockBitstream(m_hEncoder, lockBitstreamData.outputBitstream));
@@ -688,7 +689,7 @@ void NvEncoder::FlushEncoder()
         // flush the encoder queue and then unmapped it if any surface is still mapped
         try
         {
-            std::vector<std::vector<uint8_t>> vPacket;
+            std::vector<NvPacket> vPacket;
             EndEncode(vPacket);
         }
         catch (...)

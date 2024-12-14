@@ -26,9 +26,9 @@
  */
 
 
-#ifndef WIN32
-#include <dlfcn.h>
-#endif
+// #ifndef WIN32
+// #include <dlfcn.h>
+// #endif
 #include "NvEncoder/NvEncoderD3D11.h"
 #include <D3D9Types.h>
 
@@ -49,9 +49,9 @@ DXGI_FORMAT GetD3D11Format(NV_ENC_BUFFER_FORMAT eBufferFormat)
     }
 }
 
-NvEncoderD3D11::NvEncoderD3D11(ID3D11Device* pD3D11Device, uint32_t nWidth, uint32_t nHeight,
+NvEncoderD3D11::NvEncoderD3D11(CudaFunctions *cuda_dl, NvencFunctions *nvenc_dl, ID3D11Device* pD3D11Device, uint32_t nWidth, uint32_t nHeight,
     NV_ENC_BUFFER_FORMAT eBufferFormat,  uint32_t nExtraOutputDelay, bool bMotionEstimationOnly, bool bOutputInVideoMemory) :
-    NvEncoder(NV_ENC_DEVICE_TYPE_DIRECTX, pD3D11Device, nWidth, nHeight, eBufferFormat, nExtraOutputDelay, bMotionEstimationOnly, bOutputInVideoMemory)
+    NvEncoder(nvenc_dl, NV_ENC_DEVICE_TYPE_DIRECTX, pD3D11Device, nWidth, nHeight, eBufferFormat, nExtraOutputDelay, bMotionEstimationOnly, bOutputInVideoMemory)
 {
     if (!pD3D11Device)
     {
