@@ -137,6 +137,18 @@ mfxStatus mfx_get_default_audio_dll_name(wchar_t *pPath, size_t pathSize, eMfxIm
 #endif
 } // mfxStatus mfx_get_default_audio_dll_name(wchar_t *pPath, size_t pathSize, eMfxImplType implType)
 
+// Force load library from system path to avoid DLL pre-loading attacks.
+// We try to avoid loading DLLs from the application directory because we provide a portable version.
+HMODULE load_library_system_path(const wchar_t *pFileName) {
+    const wchar_t * pDllName = wcsrchr(pFileName, L'\\');
+    if (pDllName == NULL) {
+        pDllName = pFileName;
+    } else {
+        pDllName++;
+    }
+    return LoadLibraryExW(pDllName, NULL, LOAD_LIBRARY_SEARCH_SYSTEM32 | LOAD_LIBRARY_SEARCH_USER_DIRS);
+}
+
 mfxModuleHandle mfx_dll_load(const wchar_t *pFileName)
 {
     mfxModuleHandle hModule = (mfxModuleHandle) 0;
@@ -158,7 +170,7 @@ mfxModuleHandle mfx_dll_load(const wchar_t *pFileName)
 
     // load the library's module
 #if !defined(MEDIASDK_ARM_LOADER)
-    hModule = LoadLibraryExW(pFileName, NULL, 0);
+    hModule = load_library_system_path(pFileName);
 #endif
 
 #if !defined(MEDIASDK_UWP_DISPATCHER)

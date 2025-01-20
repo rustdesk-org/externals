@@ -106,7 +106,7 @@ void DXDevice::LoadDLLModule(const wchar_t *pModuleName)
 #endif // !defined(MEDIASDK_UWP_DISPATCHER)
 
     // load specified library
-    m_hModule = LoadLibraryExW(pModuleName, NULL, 0);
+    m_hModule = LoadLibraryExW(pModuleName, NULL, LOAD_LIBRARY_SEARCH_SYSTEM32 | LOAD_LIBRARY_SEARCH_USER_DIRS);
 
 #if !defined(MEDIASDK_UWP_DISPATCHER)
     // set the previous error mode
